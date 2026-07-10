@@ -1,5 +1,8 @@
 #include "GPOutput.h"
 
+namespace ukaikokko
+{
+
 void GPOutput::write(bool PinState) const
 {
     if (PinState)
@@ -21,3 +24,5 @@ void GPOutput::toggle() const
 {
     HAL_GPIO_TogglePin(_GPIOx, _GPIO_Pin);
 }
+
+} // namespace ukaikokko

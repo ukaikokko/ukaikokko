@@ -3,6 +3,9 @@
 
 #include <main.h>
 
+namespace ukaikokko
+{
+
 class GPInput
 {
    public:
@@ -14,5 +17,7 @@ class GPInput
     GPIO_TypeDef* _GPIOx;
     uint16_t _GPIO_Pin;
 };
+
+} // namespace ukaikokko
 
 #endif // __GPINPUT_H
