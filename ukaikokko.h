@@ -1,3 +1,3 @@
 #include "GPIO/GPIO.h"
 #include "BufferedUART/InterruptBufferedUART.hpp"
-#include "CAN/CAN.hpp"
+#include "BufferedCAN/BufferedCAN.hpp"
