@@ -76,29 +76,32 @@ void BufferedCAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::RxCplt(CAN_Han
         return;
     }
 
-    CAN_RxHeaderTypeDef rxHeader;
-    if (HAL_CAN_GetRxMessage(_hcan, fifo, &rxHeader, _sysRxBuf[_sysRxBufHead].data) == HAL_OK)
+    while (HAL_CAN_GetRxFifoFillLevel(_hcan, fifo) > 0)
     {
-        if (rxHeader.IDE == CAN_ID_STD)
+        CAN_RxHeaderTypeDef rxHeader;
+        if (HAL_CAN_GetRxMessage(_hcan, fifo, &rxHeader, _sysRxBuf[_sysRxBufHead].data) == HAL_OK)
         {
-            _sysRxBuf[_sysRxBufHead].id = rxHeader.StdId;
-        }
-        else
-        {
-            _sysRxBuf[_sysRxBufHead].id = rxHeader.ExtId;
-            _sysRxBuf[_sysRxBufHead].id |= EXT_ID_FLAG; // Extended ID flag
-        }
-        _sysRxBuf[_sysRxBufHead].dlc = rxHeader.DLC;
+            if (rxHeader.IDE == CAN_ID_STD)
+            {
+                _sysRxBuf[_sysRxBufHead].id = rxHeader.StdId;
+            }
+            else
+            {
+                _sysRxBuf[_sysRxBufHead].id = rxHeader.ExtId;
+                _sysRxBuf[_sysRxBufHead].id |= EXT_ID_FLAG; // Extended ID flag
+            }
+            _sysRxBuf[_sysRxBufHead].dlc = rxHeader.DLC;
 
-        size_t nextHead = (_sysRxBufHead + 1) % SYS_RX_BUF_SIZE;
-        if (nextHead == _sysRxBufTail)
-        {
-            // System RX buffer overflow
-            _sysRxOverflowCount++;
-        }
-        else
-        {
-            _sysRxBufHead = nextHead;
+            size_t nextHead = (_sysRxBufHead + 1) % SYS_RX_BUF_SIZE;
+            if (nextHead == _sysRxBufTail)
+            {
+                // System RX buffer overflow
+                _sysRxOverflowCount++;
+            }
+            else
+            {
+                _sysRxBufHead = nextHead;
+            }
         }
     }
 }
