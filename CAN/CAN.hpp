@@ -1,5 +1,5 @@
-#ifndef __UKAIKOKKO_CAN_H
-#define __UKAIKOKKO_CAN_H
+#ifndef __UKAIKOKKO_BUFFERED_CAN_H
+#define __UKAIKOKKO_BUFFERED_CAN_H
 
 #include <main.h>
 
@@ -15,15 +15,15 @@ struct CANMessage
 };
 
 template <size_t SYS_RX_BUF_SIZE, size_t USER_RX_BUF_SIZE, size_t TX_BUF_SIZE>
-class CAN
+class BufferedCAN
 {
     static_assert(SYS_RX_BUF_SIZE >= 2);
     static_assert(USER_RX_BUF_SIZE >= 2);
     static_assert(TX_BUF_SIZE >= 2);
 
    public:
-    CAN(CAN_HandleTypeDef* hcan) : _hcan(hcan) {}
-    ~CAN() = default;
+    BufferedCAN(CAN_HandleTypeDef* hcan) : _hcan(hcan) {}
+    ~BufferedCAN() = default;
     HAL_StatusTypeDef configFilter(CAN_FilterTypeDef* sFilterConfig) const { return HAL_CAN_ConfigFilter(_hcan, sFilterConfig); }
     HAL_StatusTypeDef begin() const { return HAL_CAN_Start(_hcan); }
     HAL_StatusTypeDef activateNotification(uint32_t ActiveITs) const { return HAL_CAN_ActivateNotification(_hcan, ActiveITs); }
@@ -69,7 +69,7 @@ class CAN
 };
 
 template <size_t SYS_RX_BUF_SIZE, size_t USER_RX_BUF_SIZE, size_t TX_BUF_SIZE>
-void CAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::RxCplt(CAN_HandleTypeDef* hcan, unsigned int fifo)
+void BufferedCAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::RxCplt(CAN_HandleTypeDef* hcan, unsigned int fifo)
 {
     if (hcan != _hcan) // other CAN
     {
@@ -104,7 +104,7 @@ void CAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::RxCplt(CAN_HandleTypeD
 }
 
 template <size_t SYS_RX_BUF_SIZE, size_t USER_RX_BUF_SIZE, size_t TX_BUF_SIZE>
-void CAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::TxCplt(CAN_HandleTypeDef* hcan)
+void BufferedCAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::TxCplt(CAN_HandleTypeDef* hcan)
 {
     if (hcan != _hcan) // other CAN
     {
@@ -156,7 +156,7 @@ void CAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::TxCplt(CAN_HandleTypeD
 }
 
 template <size_t SYS_RX_BUF_SIZE, size_t USER_RX_BUF_SIZE, size_t TX_BUF_SIZE>
-void CAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::periodic()
+void BufferedCAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::periodic()
 {
     while (_sysRxBufTail != _sysRxBufHead)
     {
@@ -214,13 +214,13 @@ void CAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::periodic()
 }
 
 template <size_t SYS_RX_BUF_SIZE, size_t USER_RX_BUF_SIZE, size_t TX_BUF_SIZE>
-size_t CAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::available() const
+size_t BufferedCAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::available() const
 {
     return _userRxBufCount;
 }
 
 template <size_t SYS_RX_BUF_SIZE, size_t USER_RX_BUF_SIZE, size_t TX_BUF_SIZE>
-bool CAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::read(CANMessage* msg)
+bool BufferedCAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::read(CANMessage* msg)
 {
     if (_userRxBufCount == 0)
     {
@@ -248,7 +248,7 @@ bool CAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::read(CANMessage* msg)
 }
 
 template <size_t SYS_RX_BUF_SIZE, size_t USER_RX_BUF_SIZE, size_t TX_BUF_SIZE>
-bool CAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::write(const CANMessage* msg)
+bool BufferedCAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::write(const CANMessage* msg)
 {
     size_t nextHead = (_txBufHead + 1) % TX_BUF_SIZE;
     if (nextHead == _txBufTail)
@@ -306,7 +306,7 @@ bool CAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::write(const CANMessage
 }
 
 template <size_t SYS_RX_BUF_SIZE, size_t USER_RX_BUF_SIZE, size_t TX_BUF_SIZE>
-bool CAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::getError() const
+bool BufferedCAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::getError() const
 {
     bool isError = false;
     if (_sysRxOverflowCount > 0)
@@ -330,4 +330,4 @@ bool CAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::getError() const
 
 } // namespace ukaikokko
 
-#endif // __UKAIKOKKO_CAN_H
+#endif // __UKAIKOKKO_BUFFERED_CAN_H
