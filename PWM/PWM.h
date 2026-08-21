@@ -17,7 +17,7 @@ class PWM
 
    private:
     TIM_HandleTypeDef* _htim;
-    uint32_t _Channel;
+    const uint32_t _Channel;
     const uint32_t _CounterPeriod;
     double _duty = 0.0;
 };
