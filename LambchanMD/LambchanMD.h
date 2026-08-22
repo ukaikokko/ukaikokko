@@ -24,7 +24,7 @@ class LambchanMD
     ~LambchanMD();
     HAL_StatusTypeDef start() const;
     HAL_StatusTypeDef stop() const;
-    /// @param output 範囲 : -10.0 ~ 1.0
+    /// @param output 範囲 : -1.0 ~ 1.0
     double setOutput(const double output);
 
    private:
