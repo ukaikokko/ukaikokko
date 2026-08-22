@@ -3,11 +3,6 @@
 namespace ukaikokko
 {
 
-PWM::~PWM()
-{
-    stop();
-}
-
 HAL_StatusTypeDef PWM::start() const
 {
     return HAL_TIM_PWM_Start(_htim, _Channel);
