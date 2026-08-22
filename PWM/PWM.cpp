@@ -36,12 +36,12 @@ void PWM::setDuty(const double duty)
     if (_htim->Init.Period == 65535 || _htim->Init.Period == 4294967295)
     {
         // 1を足すとオーバーフローしてしまう // 他にいいやり方があったら教えてほしいです！
-        const uint32_t ccr = static_cast<uint32_t>(_htim->Init.Period * _duty);
+        const uint32_t ccr = static_cast<uint32_t>(static_cast<double>(_htim->Init.Period) * _duty);
         __HAL_TIM_SetCompare(_htim, _Channel, ccr);
     }
     else
     {
-        const uint32_t ccr = static_cast<uint32_t>((_htim->Init.Period + 1) * _duty);
+        const uint32_t ccr = static_cast<uint32_t>(static_cast<double>(_htim->Init.Period + 1) * _duty);
         __HAL_TIM_SetCompare(_htim, _Channel, ccr);
     }
 }
