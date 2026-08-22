@@ -29,7 +29,7 @@ class LambchanMD
     void forceOutput();
     ukaikokko::PWM _pwm;
     ukaikokko::GPOutput _dir;
-    ukaikokko::MDParam _param;
+    const ukaikokko::MDParam _param;
     double _output = 0.0;
 };
 
