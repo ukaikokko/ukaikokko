@@ -2,3 +2,4 @@
 #include "BufferedUART/InterruptBufferedUART.hpp"
 #include "BufferedCAN/BufferedCAN.hpp"
 #include "PWM/PWM.h"
+#include "LambchanMD/LambchanMD.h"
