@@ -3,11 +3,6 @@
 namespace ukaikokko
 {
 
-LambchanMD::~LambchanMD()
-{
-    stop();
-}
-
 HAL_StatusTypeDef LambchanMD::start() const
 {
     _dir.write(GPIO_PIN_RESET);

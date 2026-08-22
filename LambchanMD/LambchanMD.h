@@ -21,7 +21,7 @@ class LambchanMD
    public:
     LambchanMD(PWM pwm, GPOutput dir, MDParam param)
         : _pwm(pwm), _dir(dir), _param(param) {}
-    ~LambchanMD();
+    ~LambchanMD() = default;
     HAL_StatusTypeDef start() const;
     HAL_StatusTypeDef stop() const;
     /// @param output 範囲 : -1.0 ~ 1.0
