@@ -19,17 +19,19 @@ struct MDParam
 class LambchanMD
 {
    public:
-    LambchanMD(ukaikokko::PWM pwm, ukaikokko::GPOutput dir, ukaikokko::MDParam param) : _pwm(pwm), _dir(dir), _param(param) {}
+    LambchanMD(PWM pwm, GPOutput dir, MDParam param)
+        : _pwm(pwm), _dir(dir), _param(param) {}
     ~LambchanMD();
     HAL_StatusTypeDef start() const;
     HAL_StatusTypeDef stop() const;
-    double setOutput(const double output); // @param output 範囲 : -10.0 ~ 1.0
+    /// @param output 範囲 : -10.0 ~ 1.0
+    double setOutput(const double output);
 
    private:
     void forceOutput();
-    ukaikokko::PWM _pwm;
-    ukaikokko::GPOutput _dir;
-    const ukaikokko::MDParam _param;
+    PWM _pwm;
+    GPOutput _dir;
+    const MDParam _param;
     double _output = 0.0;
 };
 
