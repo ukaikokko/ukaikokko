@@ -5,7 +5,6 @@ namespace ukaikokko
 
 HAL_StatusTypeDef LambchanMD::start() const
 {
-    _dir.write(GPIO_PIN_RESET);
     return _pwm.start();
 }
 
