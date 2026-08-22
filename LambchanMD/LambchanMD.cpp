@@ -22,7 +22,7 @@ HAL_StatusTypeDef LambchanMD::stop() const
 
 double LambchanMD::setOutput(const double output)
 {
-    double targetOutput = _output * _param.direction; // 方向補正
+    double targetOutput = output * _param.direction; // 方向補正
     // 最大出力clamp
     if (targetOutput > _param.maxOutput)
     {
