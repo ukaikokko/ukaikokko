@@ -9,7 +9,7 @@ namespace ukaikokko
 class PWM
 {
    public:
-    PWM(TIM_HandleTypeDef* htim, uint32_t Channel, uint32_t CounterPeriod) : _htim(htim), _Channel(Channel), _CounterPeriod(CounterPeriod) {}
+    PWM(TIM_HandleTypeDef* htim, uint32_t Channel) : _htim(htim), _Channel(Channel) {}
     ~PWM();
     HAL_StatusTypeDef start() const;
     HAL_StatusTypeDef stop() const;
@@ -18,7 +18,6 @@ class PWM
    private:
     TIM_HandleTypeDef* _htim;
     const uint32_t _Channel;
-    const uint32_t _CounterPeriod;
     double _duty = 0.0;
 };
 

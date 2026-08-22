@@ -33,7 +33,7 @@ void PWM::setDuty(const double duty)
         _duty = duty;
     }
 
-    if (_CounterPeriod == 65535 || _CounterPeriod == 4294967295)
+    if (_htim->Init.Period == 65535 || _htim->Init.Period == 4294967295)
     {
         // 1を足すとオーバーフローしてしまう // 他にいいやり方があったら教えてほしいです！
         const uint32_t ccr = static_cast<uint32_t>(_htim->Init.Period * _duty);
