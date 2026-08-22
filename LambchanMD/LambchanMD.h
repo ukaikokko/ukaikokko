@@ -28,7 +28,7 @@ class LambchanMD
     double setOutput(const double output);
 
    private:
-    void forceOutput();
+    void forceOutput(const double rawOutput);
     PWM _pwm;
     GPOutput _dir;
     const MDParam _param;

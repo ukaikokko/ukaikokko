@@ -22,7 +22,7 @@ HAL_StatusTypeDef LambchanMD::stop() const
 
 double LambchanMD::setOutput(const double output)
 {
-    double targetOutput = output * _param.direction; // 方向補正
+    double targetOutput = output;
     // 最大出力clamp
     if (targetOutput > _param.maxOutput)
     {
@@ -45,21 +45,21 @@ double LambchanMD::setOutput(const double output)
     }
 
     _output = targetOutput;
-    forceOutput();
+    forceOutput(_output * _param.direction); // 方向を反映
     return _output;
 }
 
-void LambchanMD::forceOutput()
+void LambchanMD::forceOutput(const double rawOutput)
 {
-    if (_output < 0.0)
+    if (rawOutput < 0.0)
     {
         _dir.write(GPIO_PIN_RESET);
-        _pwm.setDuty(-_output);
+        _pwm.setDuty(-rawOutput);
     }
     else
     {
         _dir.write(GPIO_PIN_SET);
-        _pwm.setDuty(_output);
+        _pwm.setDuty(rawOutput);
     }
 }
 
