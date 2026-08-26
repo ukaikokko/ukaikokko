@@ -19,7 +19,6 @@ class InterruptBufferedUART
     void RxCplt(UART_HandleTypeDef* huart);
     void TxCplt(UART_HandleTypeDef* huart);
     void periodic();
-    /// @return 0:no data, 1:available
     bool available() const;
     int16_t read();
     bool write(uint8_t data) { return write(&data, 1); }
