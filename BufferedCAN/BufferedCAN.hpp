@@ -14,11 +14,10 @@ struct CANMessage
     uint8_t data[8];
 };
 
-template <size_t SYS_RX_BUF_SIZE, size_t USER_RX_BUF_SIZE, size_t TX_BUF_SIZE>
+template <size_t RX_BUF_SIZE, size_t TX_BUF_SIZE>
 class BufferedCAN
 {
-    static_assert(SYS_RX_BUF_SIZE >= 2);
-    static_assert(USER_RX_BUF_SIZE >= 2);
+    static_assert(RX_BUF_SIZE >= 2);
     static_assert(TX_BUF_SIZE >= 2);
 
    public:
@@ -30,12 +29,11 @@ class BufferedCAN
     void RxCplt(CAN_HandleTypeDef* hcan, unsigned int fifo);
     void TxCplt(CAN_HandleTypeDef* hcan);
     void periodic();
-    size_t available() const;
+    bool available() const;
     bool read(CANMessage* msg);
     bool write(const CANMessage* msg);
     bool getError() const;
-    size_t getSysRxOverflowCount() const { return _sysRxOverflowCount; };
-    size_t getUserRxOverflowCount() const { return _userRxOverflowCount; };
+    size_t getRxOverflowCount() const { return _rxOverflowCount; };
     size_t getTxInvalidCount() const { return _txInvalidCount; };
     unsigned int getAddErrorCount() const { return _addErrorCount; };
 
@@ -49,27 +47,22 @@ class BufferedCAN
         uint8_t data[8];
     };
     constexpr static uint32_t EXT_ID_FLAG = 1UL << 31;
-    CompactCANMessage _sysRxBuf[SYS_RX_BUF_SIZE];
-    volatile size_t _sysRxBufHead = 0;
-    volatile size_t _sysRxBufTail = 0;
-    CompactCANMessage _userRxBuf[USER_RX_BUF_SIZE];
-    size_t _userRxBufHead = 0;
-    size_t _userRxBufTail = 0;
-    size_t _userRxBufCount = 0;
+    CompactCANMessage _rxBuf[RX_BUF_SIZE];
+    volatile size_t _rxBufHead = 0;
+    volatile size_t _rxBufTail = 0;
     CompactCANMessage _txBuf[TX_BUF_SIZE];
     size_t _txBufHead = 0;
     size_t _txBufTail = 0;
 
-    volatile size_t _sysRxOverflowCount = 0;
-    size_t _userRxOverflowCount = 0;
+    volatile size_t _rxOverflowCount = 0;
     size_t _txInvalidCount = 0;
     unsigned int _addErrorCount = 0;
 
     bool _txInProgress = false;
 };
 
-template <size_t SYS_RX_BUF_SIZE, size_t USER_RX_BUF_SIZE, size_t TX_BUF_SIZE>
-void BufferedCAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::RxCplt(CAN_HandleTypeDef* hcan, unsigned int fifo)
+template <size_t RX_BUF_SIZE, size_t TX_BUF_SIZE>
+void BufferedCAN<RX_BUF_SIZE, TX_BUF_SIZE>::RxCplt(CAN_HandleTypeDef* hcan, unsigned int fifo)
 {
     if (hcan != _hcan) // other CAN
     {
@@ -79,35 +72,35 @@ void BufferedCAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::RxCplt(CAN_Han
     while (HAL_CAN_GetRxFifoFillLevel(_hcan, fifo) > 0)
     {
         CAN_RxHeaderTypeDef rxHeader;
-        if (HAL_CAN_GetRxMessage(_hcan, fifo, &rxHeader, _sysRxBuf[_sysRxBufHead].data) == HAL_OK)
+        if (HAL_CAN_GetRxMessage(_hcan, fifo, &rxHeader, _rxBuf[_rxBufHead].data) == HAL_OK)
         {
             if (rxHeader.IDE == CAN_ID_STD)
             {
-                _sysRxBuf[_sysRxBufHead].id = rxHeader.StdId;
+                _rxBuf[_rxBufHead].id = rxHeader.StdId;
             }
             else
             {
-                _sysRxBuf[_sysRxBufHead].id = rxHeader.ExtId;
-                _sysRxBuf[_sysRxBufHead].id |= EXT_ID_FLAG; // Extended ID flag
+                _rxBuf[_rxBufHead].id = rxHeader.ExtId;
+                _rxBuf[_rxBufHead].id |= EXT_ID_FLAG; // Extended ID flag
             }
-            _sysRxBuf[_sysRxBufHead].dlc = rxHeader.DLC;
+            _rxBuf[_rxBufHead].dlc = rxHeader.DLC;
 
-            size_t nextHead = (_sysRxBufHead + 1) % SYS_RX_BUF_SIZE;
-            if (nextHead == _sysRxBufTail)
+            size_t nextHead = (_rxBufHead + 1) % RX_BUF_SIZE;
+            if (nextHead == _rxBufTail)
             {
-                // System RX buffer overflow
-                _sysRxOverflowCount++;
+                // RX buffer overflow
+                _rxOverflowCount++;
             }
             else
             {
-                _sysRxBufHead = nextHead;
+                _rxBufHead = nextHead;
             }
         }
     }
 }
 
-template <size_t SYS_RX_BUF_SIZE, size_t USER_RX_BUF_SIZE, size_t TX_BUF_SIZE>
-void BufferedCAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::TxCplt(CAN_HandleTypeDef* hcan)
+template <size_t RX_BUF_SIZE, size_t TX_BUF_SIZE>
+void BufferedCAN<RX_BUF_SIZE, TX_BUF_SIZE>::TxCplt(CAN_HandleTypeDef* hcan)
 {
     if (hcan != _hcan) // other CAN
     {
@@ -158,27 +151,9 @@ void BufferedCAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::TxCplt(CAN_Han
     }
 }
 
-template <size_t SYS_RX_BUF_SIZE, size_t USER_RX_BUF_SIZE, size_t TX_BUF_SIZE>
-void BufferedCAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::periodic()
+template <size_t RX_BUF_SIZE, size_t TX_BUF_SIZE>
+void BufferedCAN<RX_BUF_SIZE, TX_BUF_SIZE>::periodic()
 {
-    while (_sysRxBufTail != _sysRxBufHead)
-    {
-        size_t nextUserHead = (_userRxBufHead + 1) % USER_RX_BUF_SIZE;
-        if (nextUserHead == _userRxBufTail)
-        {
-            // User RX buffer overflow
-            _userRxOverflowCount++;
-            _sysRxBufTail = (_sysRxBufTail + 1) % SYS_RX_BUF_SIZE; // どんどんデータが捨てられる
-        }
-        else
-        {
-            _userRxBuf[_userRxBufHead] = _sysRxBuf[_sysRxBufTail];
-            _sysRxBufTail = (_sysRxBufTail + 1) % SYS_RX_BUF_SIZE;
-            _userRxBufHead = nextUserHead;
-            _userRxBufCount++;
-        }
-    }
-
     for (int i = 0; i < 10; i++) // Addが失敗する可能性を考慮し何回か
     {
         if (!_txInProgress && _txBufHead != _txBufTail) // 保険
@@ -216,26 +191,26 @@ void BufferedCAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::periodic()
     }
 }
 
-template <size_t SYS_RX_BUF_SIZE, size_t USER_RX_BUF_SIZE, size_t TX_BUF_SIZE>
-size_t BufferedCAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::available() const
+template <size_t RX_BUF_SIZE, size_t TX_BUF_SIZE>
+bool BufferedCAN<RX_BUF_SIZE, TX_BUF_SIZE>::available() const
 {
-    return _userRxBufCount;
+    return (_rxBufHead != _rxBufTail);
 }
 
-template <size_t SYS_RX_BUF_SIZE, size_t USER_RX_BUF_SIZE, size_t TX_BUF_SIZE>
-bool BufferedCAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::read(CANMessage* msg)
+template <size_t RX_BUF_SIZE, size_t TX_BUF_SIZE>
+bool BufferedCAN<RX_BUF_SIZE, TX_BUF_SIZE>::read(CANMessage* msg)
 {
-    if (_userRxBufCount == 0)
+    if (!available())
     {
         return false; // No data
     }
 
     for (size_t i = 0; i < 8; i++)
     {
-        msg->data[i] = _userRxBuf[_userRxBufTail].data[i];
+        msg->data[i] = _rxBuf[_rxBufTail].data[i];
     }
-    msg->id = _userRxBuf[_userRxBufTail].id;
-    msg->dlc = _userRxBuf[_userRxBufTail].dlc;
+    msg->id = _rxBuf[_rxBufTail].id;
+    msg->dlc = _rxBuf[_rxBufTail].dlc;
     if (msg->id & EXT_ID_FLAG)
     {
         msg->ide = CAN_ID_EXT;   // Extended ID
@@ -245,13 +220,12 @@ bool BufferedCAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::read(CANMessag
     {
         msg->ide = CAN_ID_STD; // Standard ID
     }
-    _userRxBufTail = (_userRxBufTail + 1) % USER_RX_BUF_SIZE;
-    _userRxBufCount--;
+    _rxBufTail = (_rxBufTail + 1) % RX_BUF_SIZE;
     return true;
 }
 
-template <size_t SYS_RX_BUF_SIZE, size_t USER_RX_BUF_SIZE, size_t TX_BUF_SIZE>
-bool BufferedCAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::write(const CANMessage* msg)
+template <size_t RX_BUF_SIZE, size_t TX_BUF_SIZE>
+bool BufferedCAN<RX_BUF_SIZE, TX_BUF_SIZE>::write(const CANMessage* msg)
 {
     size_t nextHead = (_txBufHead + 1) % TX_BUF_SIZE;
     if (nextHead == _txBufTail)
@@ -308,15 +282,11 @@ bool BufferedCAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::write(const CA
     return true;
 }
 
-template <size_t SYS_RX_BUF_SIZE, size_t USER_RX_BUF_SIZE, size_t TX_BUF_SIZE>
-bool BufferedCAN<SYS_RX_BUF_SIZE, USER_RX_BUF_SIZE, TX_BUF_SIZE>::getError() const
+template <size_t RX_BUF_SIZE, size_t TX_BUF_SIZE>
+bool BufferedCAN<RX_BUF_SIZE, TX_BUF_SIZE>::getError() const
 {
     bool isError = false;
-    if (_sysRxOverflowCount > 0)
-    {
-        isError = true;
-    }
-    if (_userRxOverflowCount > 0)
+    if (_rxOverflowCount > 0)
     {
         isError = true;
     }
