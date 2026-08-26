@@ -110,7 +110,7 @@ bool InterruptBufferedUART<RX_BUF_SIZE, TX_BUF_SIZE>::available() const
 template <size_t RX_BUF_SIZE, size_t TX_BUF_SIZE>
 int16_t InterruptBufferedUART<RX_BUF_SIZE, TX_BUF_SIZE>::read()
 {
-    if (_rxBufHead == _rxBufTail)
+    if (!available())
     {
         return -1; // No data
     }
