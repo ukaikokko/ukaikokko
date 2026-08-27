@@ -34,13 +34,13 @@ class InterruptBufferedUART
     volatile size_t _rxBufHead = 0;
     volatile size_t _rxBufTail = 0;
     uint8_t _txBuf[TX_BUF_SIZE];
-    size_t _txBufHead = 0;
-    size_t _txBufTail = 0;
+    volatile size_t _txBufHead = 0;
+    volatile size_t _txBufTail = 0;
 
     volatile size_t _rxOverflowCount = 0;
     size_t _txInvalidCount = 0;
 
-    bool _txInProgress = false;
+    volatile bool _txInProgress = false;
 };
 
 template <size_t RX_BUF_SIZE, size_t TX_BUF_SIZE>
