@@ -1,5 +1,5 @@
-#ifndef __GPINPUT_H
-#define __GPINPUT_H
+#ifndef __UKAIKOKKO_GPINPUT_H
+#define __UKAIKOKKO_GPINPUT_H
 
 #include <main.h>
 
@@ -20,4 +20,4 @@ class GPInput
 
 } // namespace ukaikokko
 
-#endif // __GPINPUT_H
+#endif // __UKAIKOKKO_GPINPUT_H

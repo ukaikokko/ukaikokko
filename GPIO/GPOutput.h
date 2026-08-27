@@ -1,5 +1,5 @@
-#ifndef __GPOUTPUT_H
-#define __GPOUTPUT_H
+#ifndef __UKAIKOKKO_GPOUTPUT_H
+#define __UKAIKOKKO_GPOUTPUT_H
 
 #include <main.h>
 
@@ -22,4 +22,4 @@ class GPOutput
 
 } // namespace ukaikokko
 
-#endif // __GPOUTPUT_H
+#endif // __UKAIKOKKO_GPOUTPUT_H

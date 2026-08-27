@@ -1,5 +1,5 @@
-#ifndef __INTERRUPT_BUFFERED_UART_H
-#define __INTERRUPT_BUFFERED_UART_H
+#ifndef __UKAIKOKKO_INTERRUPT_BUFFERED_UART_H
+#define __UKAIKOKKO_INTERRUPT_BUFFERED_UART_H
 
 #include <main.h>
 
@@ -171,4 +171,4 @@ bool InterruptBufferedUART<RX_BUF_SIZE, TX_BUF_SIZE>::getError() const
 
 } // namespace ukaikokko
 
-#endif // __INTERRUPT_BUFFERED_UART_H
+#endif // __UKAIKOKKO_INTERRUPT_BUFFERED_UART_H
