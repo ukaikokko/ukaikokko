@@ -7,11 +7,11 @@ void GPOutput::write(bool PinState) const
 {
     if (PinState)
     {
-        this->write(GPIO_PIN_SET);
+        write(GPIO_PIN_SET);
     }
     else
     {
-        this->write(GPIO_PIN_RESET);
+        write(GPIO_PIN_RESET);
     }
 }
 
