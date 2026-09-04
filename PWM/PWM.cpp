@@ -28,10 +28,19 @@ void PWM::setDuty(const double duty)
         _duty = duty;
     }
 
-    if (_htim->Init.Period == 65535 || _htim->Init.Period == 4294967295)
+    // CCR計算(詳しくはREADME.mdを参照)
+    if (_htim->Init.Period == UINT16_MAX || _htim->Init.Period == UINT32_MAX)
     {
-        // 1を足すとオーバーフローしてしまう // 他にいいやり方があったら教えてほしいです！
-        const uint32_t ccr = static_cast<uint32_t>(static_cast<double>(_htim->Init.Period) * _duty);
+        // 他にいいやり方があったら教えてほしいです！
+        uint64_t ccr = static_cast<uint64_t>((static_cast<double>(_htim->Init.Period) + 1.0) * _duty);
+        if (_htim->Init.Period == UINT16_MAX && ccr > UINT16_MAX)
+        {
+            ccr = UINT16_MAX;
+        }
+        else if (_htim->Init.Period == UINT32_MAX && ccr > UINT32_MAX)
+        {
+            ccr = UINT32_MAX;
+        }
         __HAL_TIM_SetCompare(_htim, _Channel, ccr);
     }
     else
