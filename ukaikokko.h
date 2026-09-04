@@ -4,3 +4,4 @@
 #include "PWM/PWM.h"
 #include "LambchanMD/LambchanMD.h"
 #include "BLDC_ESC/BLDC_ESC.h"
+#include "Servo/Servo.h"
