@@ -5,3 +5,5 @@
 #include "LambchanMD/LambchanMD.h"
 #include "BLDC_ESC/BLDC_ESC.h"
 #include "Servo/Servo.h"
+#include "I2C/I2C_BUS.h"
+#include "I2C/I2C_Device.h"
