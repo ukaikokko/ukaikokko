@@ -7,3 +7,4 @@
 #include "Servo/Servo.h"
 #include "I2C/I2C_BUS.h"
 #include "I2C/I2C_Device.h"
+#include "AnalogInputDMA/AnalogInputDMA.h"
