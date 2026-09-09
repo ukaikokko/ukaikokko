@@ -16,34 +16,34 @@ class I2C_Device
 
     void setTimeout(uint32_t timeout);
 
-    HAL_StatusTypeDef isDeviceReady(uint32_t Trials = 1) { return isDeviceReady(Trials, _timeout); }
-    HAL_StatusTypeDef isDeviceReady(uint32_t Trials, uint32_t Timeout);
+    HAL_StatusTypeDef isDeviceReady(uint32_t Trials = 1) const { return isDeviceReady(Trials, _timeout); }
+    HAL_StatusTypeDef isDeviceReady(uint32_t Trials, uint32_t Timeout) const;
 
-    HAL_StatusTypeDef write(uint8_t* pData, uint16_t Size) { return write(pData, Size, _timeout); }
-    HAL_StatusTypeDef write(uint8_t* pData, uint16_t Size, uint32_t Timeout);
+    HAL_StatusTypeDef write(uint8_t* pData, uint16_t Size) const { return write(pData, Size, _timeout); }
+    HAL_StatusTypeDef write(uint8_t* pData, uint16_t Size, uint32_t Timeout) const;
 
-    HAL_StatusTypeDef read(uint8_t* pData, uint16_t Size) { return read(pData, Size, _timeout); }
-    HAL_StatusTypeDef read(uint8_t* pData, uint16_t Size, uint32_t Timeout);
-
-    /// 8bit memory address
-    HAL_StatusTypeDef memWrite8(uint8_t MemAddress, uint8_t* pData, uint16_t Size) { return memWrite8(MemAddress, pData, Size, _timeout); }
-    /// 8bit memory address
-    HAL_StatusTypeDef memWrite8(uint8_t MemAddress, uint8_t* pData, uint16_t Size, uint32_t Timeout);
-
-    /// 16bit memory address
-    HAL_StatusTypeDef memWrite16(uint16_t MemAddress, uint8_t* pData, uint16_t Size) { return memWrite16(MemAddress, pData, Size, _timeout); }
-    /// 16bit memory address
-    HAL_StatusTypeDef memWrite16(uint16_t MemAddress, uint8_t* pData, uint16_t Size, uint32_t Timeout);
+    HAL_StatusTypeDef read(uint8_t* pData, uint16_t Size) const { return read(pData, Size, _timeout); }
+    HAL_StatusTypeDef read(uint8_t* pData, uint16_t Size, uint32_t Timeout) const;
 
     /// 8bit memory address
-    HAL_StatusTypeDef memRead8(uint8_t MemAddress, uint8_t* pData, uint16_t Size) { return memRead8(MemAddress, pData, Size, _timeout); }
+    HAL_StatusTypeDef memWrite8(uint8_t MemAddress, uint8_t* pData, uint16_t Size) const { return memWrite8(MemAddress, pData, Size, _timeout); }
     /// 8bit memory address
-    HAL_StatusTypeDef memRead8(uint8_t MemAddress, uint8_t* pData, uint16_t Size, uint32_t Timeout);
+    HAL_StatusTypeDef memWrite8(uint8_t MemAddress, uint8_t* pData, uint16_t Size, uint32_t Timeout) const;
 
     /// 16bit memory address
-    HAL_StatusTypeDef memRead16(uint16_t MemAddress, uint8_t* pData, uint16_t Size) { return memRead16(MemAddress, pData, Size, _timeout); }
+    HAL_StatusTypeDef memWrite16(uint16_t MemAddress, uint8_t* pData, uint16_t Size) const { return memWrite16(MemAddress, pData, Size, _timeout); }
     /// 16bit memory address
-    HAL_StatusTypeDef memRead16(uint16_t MemAddress, uint8_t* pData, uint16_t Size, uint32_t Timeout);
+    HAL_StatusTypeDef memWrite16(uint16_t MemAddress, uint8_t* pData, uint16_t Size, uint32_t Timeout) const;
+
+    /// 8bit memory address
+    HAL_StatusTypeDef memRead8(uint8_t MemAddress, uint8_t* pData, uint16_t Size) const { return memRead8(MemAddress, pData, Size, _timeout); }
+    /// 8bit memory address
+    HAL_StatusTypeDef memRead8(uint8_t MemAddress, uint8_t* pData, uint16_t Size, uint32_t Timeout) const;
+
+    /// 16bit memory address
+    HAL_StatusTypeDef memRead16(uint16_t MemAddress, uint8_t* pData, uint16_t Size) const { return memRead16(MemAddress, pData, Size, _timeout); }
+    /// 16bit memory address
+    HAL_StatusTypeDef memRead16(uint16_t MemAddress, uint8_t* pData, uint16_t Size, uint32_t Timeout) const;
 
    private:
     I2C_BUS& _bus;
