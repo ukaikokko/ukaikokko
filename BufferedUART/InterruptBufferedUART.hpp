@@ -15,7 +15,7 @@ class InterruptBufferedUART
    public:
     InterruptBufferedUART(UART_HandleTypeDef* huart) : _huart(huart) {}
     ~InterruptBufferedUART() = default;
-    HAL_StatusTypeDef begin();
+    HAL_StatusTypeDef start();
     void RxCplt(UART_HandleTypeDef* huart);
     void TxCplt(UART_HandleTypeDef* huart);
     void periodic();
@@ -44,7 +44,7 @@ class InterruptBufferedUART
 };
 
 template <size_t RX_BUF_SIZE, size_t TX_BUF_SIZE>
-HAL_StatusTypeDef InterruptBufferedUART<RX_BUF_SIZE, TX_BUF_SIZE>::begin()
+HAL_StatusTypeDef InterruptBufferedUART<RX_BUF_SIZE, TX_BUF_SIZE>::start()
 {
     return HAL_UART_Receive_IT(_huart, &(_rxBuf[_rxBufHead]), 1);
 }

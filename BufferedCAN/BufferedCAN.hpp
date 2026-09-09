@@ -24,7 +24,7 @@ class BufferedCAN
     BufferedCAN(CAN_HandleTypeDef* hcan) : _hcan(hcan) {}
     ~BufferedCAN() = default;
     HAL_StatusTypeDef configFilter(CAN_FilterTypeDef* sFilterConfig) const { return HAL_CAN_ConfigFilter(_hcan, sFilterConfig); }
-    HAL_StatusTypeDef begin() const { return HAL_CAN_Start(_hcan); }
+    HAL_StatusTypeDef start() const { return HAL_CAN_Start(_hcan); }
     HAL_StatusTypeDef activateNotification(uint32_t ActiveITs) const { return HAL_CAN_ActivateNotification(_hcan, ActiveITs); }
     void RxCplt(CAN_HandleTypeDef* hcan, unsigned int fifo);
     void TxCplt(CAN_HandleTypeDef* hcan);
