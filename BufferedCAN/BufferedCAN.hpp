@@ -184,6 +184,11 @@ void BufferedCAN<RX_BUF_SIZE, TX_BUF_SIZE>::periodic()
                 _txInProgress = false; // next periodic() will try to send again
             }
         }
+        else if (_txInProgress && HAL_CAN_GetTxMailboxesFreeLevel(_hcan) == 3)
+        {
+            // 送信中であるにもかかわらず，3つのTxMailboxが空いている場合は，送信が失敗している可能性があるので，次のperiodic()で再送する
+            _txInProgress = false;
+        }
         else
         {
             break;
