@@ -2,6 +2,7 @@
 #define __UKAIKOKKO_INTERRUPT_BUFFERED_UART_H
 
 #include <main.h>
+#include "../RingBuffer/RingBuffer.hpp"
 
 namespace ukaikokko
 {
@@ -10,7 +11,9 @@ template <size_t RX_BUF_SIZE, size_t TX_BUF_SIZE>
 class InterruptBufferedUART
 {
     static_assert(RX_BUF_SIZE >= 2);
+    static_assert((RX_BUF_SIZE & (RX_BUF_SIZE - 1)) == 0); // 2のべき乗のみを許可
     static_assert(TX_BUF_SIZE >= 2);
+    static_assert((TX_BUF_SIZE & (TX_BUF_SIZE - 1)) == 0); // 2のべき乗のみを許可
 
    public:
     InterruptBufferedUART(UART_HandleTypeDef* huart) : _huart(huart) {}
@@ -23,22 +26,14 @@ class InterruptBufferedUART
     int16_t read();
     bool write(uint8_t data) { return write(&data, 1); }
     bool write(uint8_t* data, size_t len);
-    bool getError() const;
-    size_t getRxOverflowCount() const { return _rxOverflowCount; }
-    size_t getTxInvalidCount() const { return _txInvalidCount; }
+    bool isError() const;
+    size_t rxOverFlowCount() const { return _rxBuf.overFlowCount(); }
+    size_t txOverFlowCount() const { return _txBuf.overFlowCount(); }
 
    private:
     UART_HandleTypeDef* _huart;
-
-    uint8_t _rxBuf[RX_BUF_SIZE];
-    volatile size_t _rxBufHead = 0;
-    volatile size_t _rxBufTail = 0;
-    uint8_t _txBuf[TX_BUF_SIZE];
-    volatile size_t _txBufHead = 0;
-    volatile size_t _txBufTail = 0;
-
-    volatile size_t _rxOverflowCount = 0;
-    size_t _txInvalidCount = 0;
+    RingBuffer<uint8_t, RX_BUF_SIZE> _rxBuf;
+    RingBuffer<uint8_t, TX_BUF_SIZE> _txBuf;
 
     volatile bool _txInProgress = false;
 };
@@ -46,7 +41,7 @@ class InterruptBufferedUART
 template <size_t RX_BUF_SIZE, size_t TX_BUF_SIZE>
 HAL_StatusTypeDef InterruptBufferedUART<RX_BUF_SIZE, TX_BUF_SIZE>::start()
 {
-    return HAL_UART_Receive_IT(_huart, &(_rxBuf[_rxBufHead]), 1);
+    return HAL_UART_Receive_IT(_huart, _rxBuf.nextPutAddress(), 1);
 }
 
 template <size_t RX_BUF_SIZE, size_t TX_BUF_SIZE>
@@ -57,18 +52,8 @@ void InterruptBufferedUART<RX_BUF_SIZE, TX_BUF_SIZE>::RxCplt(UART_HandleTypeDef*
         return;
     }
 
-    size_t nextHead = (_rxBufHead + 1) % RX_BUF_SIZE;
-    if (nextHead == _rxBufTail)
-    {
-        // RX buffer overflow
-        _rxOverflowCount++;
-        HAL_UART_Receive_IT(_huart, &(_rxBuf[_rxBufHead]), 1); // 最も新しいデータを上書き
-    }
-    else
-    {
-        _rxBufHead = nextHead;
-        HAL_UART_Receive_IT(_huart, &(_rxBuf[_rxBufHead]), 1);
-    }
+    _rxBuf.headMove();
+    HAL_UART_Receive_IT(_huart, _rxBuf.nextPutAddress(), 1);
 }
 
 template <size_t RX_BUF_SIZE, size_t TX_BUF_SIZE>
@@ -79,44 +64,45 @@ void InterruptBufferedUART<RX_BUF_SIZE, TX_BUF_SIZE>::TxCplt(UART_HandleTypeDef*
         return;
     }
 
-    _txBufTail = (_txBufTail + 1) % TX_BUF_SIZE;
-    if (_txBufHead == _txBufTail)
+    _txBuf.tailMove();
+    if (!(_txBuf.empty()))
     {
-        _txInProgress = false;
+        HAL_UART_Transmit_IT(_huart, _txBuf.nextGetAddress(), 1);
     }
     else
     {
-        HAL_UART_Transmit_IT(_huart, &(_txBuf[_txBufTail]), 1);
+        _txInProgress = false;
     }
 }
 
 template <size_t RX_BUF_SIZE, size_t TX_BUF_SIZE>
 void InterruptBufferedUART<RX_BUF_SIZE, TX_BUF_SIZE>::periodic()
 {
-    if (!_txInProgress && _txBufHead != _txBufTail) // 割り込みのタイミングによっては送り損ねる可能性があるので，保険として
+    if (!_txInProgress && !(_txBuf.empty())) // 割り込みのタイミングによっては送り損ねる可能性があるので，保険として
     {
         _txInProgress = true;
-        HAL_UART_Transmit_IT(_huart, &(_txBuf[_txBufTail]), 1);
+        HAL_UART_Transmit_IT(_huart, _txBuf.nextGetAddress(), 1);
     }
 }
 
 template <size_t RX_BUF_SIZE, size_t TX_BUF_SIZE>
 bool InterruptBufferedUART<RX_BUF_SIZE, TX_BUF_SIZE>::available() const
 {
-    return (_rxBufHead != _rxBufTail);
+    return !(_rxBuf.empty());
 }
 
 template <size_t RX_BUF_SIZE, size_t TX_BUF_SIZE>
 int16_t InterruptBufferedUART<RX_BUF_SIZE, TX_BUF_SIZE>::read()
 {
-    if (!available())
+    uint8_t data = 0;
+    if (_rxBuf.get(data) == HAL_OK)
     {
-        return -1; // No data
+        return data;
     }
-
-    const uint8_t data = _rxBuf[_rxBufTail];
-    _rxBufTail = (_rxBufTail + 1) % RX_BUF_SIZE;
-    return data;
+    else
+    {
+        return -1;
+    }
 }
 
 template <size_t RX_BUF_SIZE, size_t TX_BUF_SIZE>
@@ -127,42 +113,34 @@ bool InterruptBufferedUART<RX_BUF_SIZE, TX_BUF_SIZE>::write(uint8_t* data, size_
         return true; // Nothing to write
     }
 
-    size_t checkHead = _txBufHead;
-    for (size_t i = 0; i < len + 1; i++)
+    if (_txBuf.freeLevel() < len)
     {
-        checkHead = (checkHead + 1) % TX_BUF_SIZE;
-        if (checkHead == _txBufTail) // ぴったりの場合？→len+1まで確認されるので，head==tailとなる
-        {
-            // TX buffer overflow
-            _txInvalidCount++;
-            return false;
-        }
+        return false;
     }
+
     for (size_t i = 0; i < len; i++)
     {
-        size_t nextHead = (_txBufHead + 1) % TX_BUF_SIZE;
-        _txBuf[_txBufHead] = data[i];
-        _txBufHead = nextHead;
+        _txBuf.put(data[i]);
     }
 
     if (!_txInProgress)
     {
         _txInProgress = true;
-        HAL_UART_Transmit_IT(_huart, &(_txBuf[_txBufTail]), 1);
+        HAL_UART_Transmit_IT(_huart, _txBuf.nextGetAddress(), 1);
     }
 
     return true;
 }
 
 template <size_t RX_BUF_SIZE, size_t TX_BUF_SIZE>
-bool InterruptBufferedUART<RX_BUF_SIZE, TX_BUF_SIZE>::getError() const
+bool InterruptBufferedUART<RX_BUF_SIZE, TX_BUF_SIZE>::isError() const
 {
     bool isError = false;
-    if (_rxOverflowCount > 0)
+    if (_rxBuf.overFlowCount() > 0)
     {
         isError = true;
     }
-    if (_txInvalidCount > 0)
+    if (_txBuf.overFlowCount() > 0)
     {
         isError = true;
     }
