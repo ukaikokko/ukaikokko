@@ -20,13 +20,13 @@ class RingBuffer
     T* nextPutAddress();
     /// @brief nextPutAddress()にデータが格納されたのち，呼び出される必要があります
     void headMove();
-    bool isOverFlow() { return _overFlow; }
+    size_t overFlowCount() const { return _overFlowCount; }
 
    private:
     static constexpr size_t BUF_MASK = BUF_SIZE - 1;
     volatile size_t _head = 0;
     volatile size_t _tail = 0;
-    volatile bool _overFlow = false;
+    volatile size_t _overFlowCount = 0;
     bool _trashCanFlag = true;
     T _buf[BUF_SIZE];
     T _trashCan;
@@ -50,7 +50,7 @@ HAL_StatusTypeDef RingBuffer<T, BUF_SIZE>::put(const T& data)
     const size_t nextHead = (_head + 1) & BUF_MASK;
     if (nextHead == _tail)
     {
-        _overFlow = true;
+        _overFlowCount++;
         return HAL_ERROR;
     }
     _buf[_head] = data;
@@ -64,7 +64,7 @@ T* RingBuffer<T, BUF_SIZE>::nextPutAddress()
     const size_t nextHead = (_head + 1) & BUF_MASK;
     if (nextHead == _tail)
     {
-        _overFlow = true;
+        _overFlowCount++;
         _trashCanFlag = true;
         return &_trashCan;
     }
