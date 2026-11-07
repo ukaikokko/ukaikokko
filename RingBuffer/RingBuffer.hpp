@@ -69,13 +69,15 @@ HAL_StatusTypeDef RingBuffer<T, BUF_SIZE>::put(const T& data)
 template <typename T, size_t BUF_SIZE>
 size_t RingBuffer<T, BUF_SIZE>::freeLevel() const
 {
-    if (_head >= _tail)
+    const size_t head = _head;
+    const size_t tail = _tail;
+    if (head >= tail)
     {
-        return BUF_SIZE - 1 - (_head - _tail);
+        return BUF_SIZE - 1 - (head - tail);
     }
     else
     {
-        return _tail - _head - 1;
+        return tail - head - 1;
     }
 }
 
