@@ -6,19 +6,24 @@
 namespace ukaikokko
 {
 
+/// @tparam BUF_SIZE 2のべき乗である必要があります
 template <typename T, size_t BUF_SIZE>
 class RingBuffer
 {
     static_assert(BUF_SIZE >= 2);
+    static_assert((BUF_SIZE & (BUF_SIZE - 1)) == 0); // 2のべき乗のみを許可
 
    public:
     HAL_StatusTypeDef get(T& data);
     HAL_StatusTypeDef put(const T& data);
+    /// @brief 実際にputされた後，headMove()を呼び出す必要があります
     T* nextPutAddress();
+    /// @brief nextPutAddress()にデータが格納されたのち，呼び出される必要があります
     void headMove();
     bool isOverFlow() { return _overFlow; }
 
    private:
+    static constexpr size_t BUF_MASK = BUF_SIZE - 1;
     volatile size_t _head = 0;
     volatile size_t _tail = 0;
     volatile bool _overFlow = false;
@@ -35,14 +40,14 @@ HAL_StatusTypeDef RingBuffer<T, BUF_SIZE>::get(T& data)
         return HAL_ERROR;
     }
     data = _buf[_tail];
-    _tail = (_tail + 1) % BUF_SIZE;
+    _tail = (_tail + 1) & BUF_MASK;
     return HAL_OK;
 }
 
 template <typename T, size_t BUF_SIZE>
 HAL_StatusTypeDef RingBuffer<T, BUF_SIZE>::put(const T& data)
 {
-    const size_t nextHead = (_head + 1) % BUF_SIZE;
+    const size_t nextHead = (_head + 1) & BUF_MASK;
     if (nextHead == _tail)
     {
         _overFlow = true;
@@ -56,7 +61,7 @@ HAL_StatusTypeDef RingBuffer<T, BUF_SIZE>::put(const T& data)
 template <typename T, size_t BUF_SIZE>
 T* RingBuffer<T, BUF_SIZE>::nextPutAddress()
 {
-    const size_t nextHead = (_head + 1) % BUF_SIZE;
+    const size_t nextHead = (_head + 1) & BUF_MASK;
     if (nextHead == _tail)
     {
         _overFlow = true;
@@ -72,7 +77,7 @@ void RingBuffer<T, BUF_SIZE>::headMove()
 {
     if (_trashCanFlag == false)
     {
-        _head = (_head + 1) % BUF_SIZE;
+        _head = (_head + 1) & BUF_MASK;
     }
 }
 
