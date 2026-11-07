@@ -120,13 +120,28 @@ bool InterruptBufferedUART<RX_BUF_SIZE, TX_BUF_SIZE>::write(uint8_t* data, size_
 
     for (size_t i = 0; i < len; i++)
     {
+        uint32_t primask = __get_PRIMASK();
+        __disable_irq();
+        // クリティカルセクション開始
+
         _txBuf.put(data[i]);
+
+        // クリティカルセクション終了
+        __set_PRIMASK(primask);
     }
 
     if (!_txInProgress)
     {
         _txInProgress = true;
+
+        uint32_t primask = __get_PRIMASK();
+        __disable_irq();
+        // クリティカルセクション開始
+
         HAL_UART_Transmit_IT(_huart, _txBuf.nextGetAddress(), 1);
+
+        // クリティカルセクション終了
+        __set_PRIMASK(primask);
     }
 
     return true;
