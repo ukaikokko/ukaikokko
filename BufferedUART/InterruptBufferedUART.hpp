@@ -120,11 +120,13 @@ bool InterruptBufferedUART<RX_BUF_SIZE, TX_BUF_SIZE>::write(uint8_t* data, size_
 
     for (size_t i = 0; i < len; i++)
     {
+        const uint8_t temp = data[i]; // 先にdata+iの計算を行う
+
         uint32_t primask = __get_PRIMASK();
         __disable_irq();
         // クリティカルセクション開始
 
-        _txBuf.put(data[i]);
+        _txBuf.put(temp);
 
         // クリティカルセクション終了
         __set_PRIMASK(primask);
