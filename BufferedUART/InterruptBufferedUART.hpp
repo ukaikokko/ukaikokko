@@ -28,12 +28,14 @@ class InterruptBufferedUART
     bool write(uint8_t* data, size_t len);
     bool isError() const;
     size_t rxOverFlowCount() const { return _rxBuf.overFlowCount(); }
+    size_t txInvalidCount() const { return _txInvalidCount; }
     size_t txOverFlowCount() const { return _txBuf.overFlowCount(); }
 
    private:
     UART_HandleTypeDef* _huart;
     RingBuffer<uint8_t, RX_BUF_SIZE> _rxBuf;
     RingBuffer<uint8_t, TX_BUF_SIZE> _txBuf;
+    size_t _txInvalidCount = 0;
 
     volatile bool _txInProgress = false;
 };
@@ -115,6 +117,7 @@ bool InterruptBufferedUART<RX_BUF_SIZE, TX_BUF_SIZE>::write(uint8_t* data, size_
 
     if (_txBuf.freeLevel() < len)
     {
+        _txInvalidCount++;
         return false;
     }
 
@@ -166,6 +169,10 @@ bool InterruptBufferedUART<RX_BUF_SIZE, TX_BUF_SIZE>::isError() const
         isError = true;
     }
     if (_txBuf.overFlowCount() > 0)
+    {
+        isError = true;
+    }
+    if (_txInvalidCount > 0)
     {
         isError = true;
     }
