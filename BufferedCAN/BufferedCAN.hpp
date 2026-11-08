@@ -56,6 +56,8 @@ class BufferedCAN
     volatile size_t _addErrorCount = 0;
 
     volatile bool _txInProgress = false;
+
+    HAL_StatusTypeDef addTxMessage(const CompactCANMessage* msg);
 };
 
 template <size_t RX_BUF_SIZE, size_t TX_BUF_SIZE>
@@ -107,23 +109,8 @@ void BufferedCAN<RX_BUF_SIZE, TX_BUF_SIZE>::TxCplt(CAN_HandleTypeDef* hcan)
         {
             break;
         }
-        CompactCANMessage* msg = _txBuf.nextGetAddress();
-        uint32_t txMailbox;
-        CAN_TxHeaderTypeDef txHeader;
-        if (msg->id & EXT_ID_FLAG)
-        {
-            txHeader.ExtId = msg->id & ~EXT_ID_FLAG; // Clear Extended ID flag
-            txHeader.IDE = CAN_ID_EXT;
-        }
-        else
-        {
-            txHeader.StdId = msg->id;
-            txHeader.IDE = CAN_ID_STD;
-        }
-        txHeader.RTR = CAN_RTR_DATA; // data frame
-        txHeader.DLC = msg->dlc;
-        txHeader.TransmitGlobalTime = DISABLE;
-        if (HAL_CAN_AddTxMessage(_hcan, &txHeader, msg->data, &txMailbox) == HAL_OK)
+
+        if (addTxMessage(_txBuf.nextGetAddress()) == HAL_OK)
         {
             _txBuf.tailMove();
         }
@@ -147,23 +134,7 @@ void BufferedCAN<RX_BUF_SIZE, TX_BUF_SIZE>::periodic()
         if (!_txInProgress && !_txBuf.empty()) // 保険
         {
             _txInProgress = true;
-            CompactCANMessage* msg = _txBuf.nextGetAddress();
-            uint32_t txMailbox;
-            CAN_TxHeaderTypeDef txHeader;
-            if (msg->id & EXT_ID_FLAG)
-            {
-                txHeader.ExtId = msg->id & ~EXT_ID_FLAG; // Clear Extended ID flag
-                txHeader.IDE = CAN_ID_EXT;
-            }
-            else
-            {
-                txHeader.StdId = msg->id;
-                txHeader.IDE = CAN_ID_STD;
-            }
-            txHeader.RTR = CAN_RTR_DATA; // data frame
-            txHeader.DLC = msg->dlc;
-            txHeader.TransmitGlobalTime = DISABLE;
-            if (HAL_CAN_AddTxMessage(_hcan, &txHeader, msg->data, &txMailbox) == HAL_OK)
+            if (addTxMessage(_txBuf.nextGetAddress()) == HAL_OK)
             {
                 _txBuf.tailMove();
             }
@@ -244,23 +215,7 @@ bool BufferedCAN<RX_BUF_SIZE, TX_BUF_SIZE>::write(const CANMessage* msg)
     if (!_txInProgress)
     {
         _txInProgress = true;
-        CompactCANMessage* msg = _txBuf.nextGetAddress();
-        uint32_t txMailbox;
-        CAN_TxHeaderTypeDef txHeader;
-        if (msg->id & EXT_ID_FLAG)
-        {
-            txHeader.ExtId = msg->id & ~EXT_ID_FLAG; // Clear Extended ID flag
-            txHeader.IDE = CAN_ID_EXT;
-        }
-        else
-        {
-            txHeader.StdId = msg->id;
-            txHeader.IDE = CAN_ID_STD;
-        }
-        txHeader.RTR = CAN_RTR_DATA; // data frame
-        txHeader.DLC = msg->dlc;
-        txHeader.TransmitGlobalTime = DISABLE;
-        if (HAL_CAN_AddTxMessage(_hcan, &txHeader, msg->data, &txMailbox) == HAL_OK)
+        if (addTxMessage(_txBuf.nextGetAddress()) == HAL_OK)
         {
             _txBuf.tailMove();
         }
@@ -291,6 +246,27 @@ bool BufferedCAN<RX_BUF_SIZE, TX_BUF_SIZE>::getError() const
         isError = true;
     }
     return isError;
+}
+
+template <size_t RX_BUF_SIZE, size_t TX_BUF_SIZE>
+HAL_StatusTypeDef BufferedCAN<RX_BUF_SIZE, TX_BUF_SIZE>::addTxMessage(const CompactCANMessage* msg)
+{
+    CAN_TxHeaderTypeDef txHeader;
+    if (msg->id & EXT_ID_FLAG)
+    {
+        txHeader.ExtId = msg->id & ~EXT_ID_FLAG; // Clear Extended ID flag
+        txHeader.IDE = CAN_ID_EXT;
+    }
+    else
+    {
+        txHeader.StdId = msg->id;
+        txHeader.IDE = CAN_ID_STD;
+    }
+    txHeader.RTR = CAN_RTR_DATA; // data frame
+    txHeader.DLC = msg->dlc;
+    txHeader.TransmitGlobalTime = DISABLE;
+    uint32_t txMailbox;
+    return HAL_CAN_AddTxMessage(_hcan, &txHeader, msg->data, &txMailbox);
 }
 
 } // namespace ukaikokko
