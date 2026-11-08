@@ -132,16 +132,24 @@ bool InterruptBufferedUART<RX_BUF_SIZE, TX_BUF_SIZE>::write(uint8_t* data, size_
 
     if (!_txInProgress)
     {
-        _txInProgress = true;
-
         uint32_t primask = __get_PRIMASK();
         __disable_irq();
         // クリティカルセクション開始
 
-        HAL_UART_Transmit_IT(_huart, _txBuf.nextGetAddress(), 1);
+        if (!_txInProgress)
+        {
+            _txInProgress = true;
 
-        // クリティカルセクション終了
-        __set_PRIMASK(primask);
+            // クリティカルセクション終了
+            __set_PRIMASK(primask);
+
+            HAL_UART_Transmit_IT(_huart, _txBuf.nextGetAddress(), 1);
+        }
+        else
+        {
+            // クリティカルセクション終了
+            __set_PRIMASK(primask);
+        }
     }
 
     return true;
