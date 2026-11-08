@@ -27,9 +27,9 @@ class InterruptBufferedUART
     bool write(uint8_t data) { return write(&data, 1); }
     bool write(uint8_t* data, size_t len);
     bool getError() const;
-    size_t getRxOverFlowCount() const { return _rxBuf.overFlowCount(); }
+    size_t getRxOverflowCount() const { return _rxBuf.overFlowCount(); }
     size_t getTxInvalidCount() const { return _txInvalidCount; }
-    size_t getTxOverFlowCount() const { return _txBuf.overFlowCount(); }
+    size_t getTxOverflowCount() const { return _txBuf.overFlowCount(); }
 
    private:
     UART_HandleTypeDef* _huart;
