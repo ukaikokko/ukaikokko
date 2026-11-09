@@ -133,15 +133,31 @@ void BufferedCAN<RX_BUF_SIZE, TX_BUF_SIZE>::periodic()
     {
         if (!_txInProgress && !_txBuf.empty()) // 保険
         {
-            _txInProgress = true;
-            if (addTxMessage(_txBuf.nextGetAddress()) == HAL_OK)
+            uint32_t primask = __get_PRIMASK();
+            __disable_irq();
+            // クリティカルセクション開始
+
+            if (!_txInProgress)
             {
-                _txBuf.tailMove();
+                _txInProgress = true;
+
+                // クリティカルセクション終了
+                __set_PRIMASK(primask);
+
+                if (addTxMessage(_txBuf.nextGetAddress()) == HAL_OK)
+                {
+                    _txBuf.tailMove();
+                }
+                else
+                {
+                    _addErrorCount++;
+                    _txInProgress = false; // next periodic() will try to send again
+                }
             }
             else
             {
-                _addErrorCount++;
-                _txInProgress = false; // next periodic() will try to send again
+                // クリティカルセクション終了
+                __set_PRIMASK(primask);
             }
         }
         else if (_txInProgress && HAL_CAN_GetTxMailboxesFreeLevel(_hcan) == 3)
@@ -207,22 +223,47 @@ bool BufferedCAN<RX_BUF_SIZE, TX_BUF_SIZE>::write(const CANMessage* msg)
         compactMsg.data[i] = msg->data[i];
     }
 
-    if (_txBuf.put(compactMsg) != HAL_OK)
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    // クリティカルセクション開始
+
+    const HAL_StatusTypeDef ret = _txBuf.put(compactMsg);
+
+    // クリティカルセクション終了
+    __set_PRIMASK(primask);
+
+    if (ret != HAL_OK)
     {
         return false;
     }
 
     if (!_txInProgress)
     {
-        _txInProgress = true;
-        if (addTxMessage(_txBuf.nextGetAddress()) == HAL_OK)
+        uint32_t primask = __get_PRIMASK();
+        __disable_irq();
+        // クリティカルセクション開始
+
+        if (!_txInProgress)
         {
-            _txBuf.tailMove();
+            _txInProgress = true;
+
+            // クリティカルセクション終了
+            __set_PRIMASK(primask);
+
+            if (addTxMessage(_txBuf.nextGetAddress()) == HAL_OK)
+            {
+                _txBuf.tailMove();
+            }
+            else
+            {
+                _addErrorCount++;
+                _txInProgress = false; // next periodic() will try to send again
+            }
         }
         else
         {
-            _addErrorCount++;
-            _txInProgress = false; // next periodic() will try to send again
+            // クリティカルセクション終了
+            __set_PRIMASK(primask);
         }
     }
 
