@@ -82,8 +82,24 @@ void InterruptBufferedUART<RX_BUF_SIZE, TX_BUF_SIZE>::periodic()
 {
     if (!_txInProgress && !(_txBuf.empty())) // 割り込みのタイミングによっては送り損ねる可能性があるので，保険として
     {
-        _txInProgress = true;
-        HAL_UART_Transmit_IT(_huart, _txBuf.nextGetAddress(), 1);
+        uint32_t primask = __get_PRIMASK();
+        __disable_irq();
+        // クリティカルセクション開始
+
+        if (!_txInProgress)
+        {
+            _txInProgress = true;
+
+            // クリティカルセクション終了
+            __set_PRIMASK(primask);
+
+            HAL_UART_Transmit_IT(_huart, _txBuf.nextGetAddress(), 1);
+        }
+        else
+        {
+            // クリティカルセクション終了
+            __set_PRIMASK(primask);
+        }
     }
 }
 
