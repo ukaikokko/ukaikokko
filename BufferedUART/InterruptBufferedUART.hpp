@@ -21,6 +21,7 @@ class InterruptBufferedUART
     HAL_StatusTypeDef start();
     void RxCplt(UART_HandleTypeDef* huart);
     void TxCplt(UART_HandleTypeDef* huart);
+    void whenError(UART_HandleTypeDef* huart);
     void periodic();
     bool available() const;
     int16_t read();
@@ -74,6 +75,19 @@ void InterruptBufferedUART<RX_BUF_SIZE, TX_BUF_SIZE>::TxCplt(UART_HandleTypeDef*
     else
     {
         _txInProgress = false;
+    }
+}
+
+template <size_t RX_BUF_SIZE, size_t TX_BUF_SIZE>
+void InterruptBufferedUART<RX_BUF_SIZE, TX_BUF_SIZE>::whenError(UART_HandleTypeDef* huart)
+{
+    if (huart != _huart) // other UART
+    {
+        return;
+    }
+    if (_huart->RxState == HAL_UART_STATE_READY)
+    {
+        HAL_UART_Receive_IT(_huart, _rxBuf.nextPutAddress(), 1);
     }
 }
 
